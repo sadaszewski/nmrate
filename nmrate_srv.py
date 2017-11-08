@@ -285,7 +285,7 @@ def handle_static(req, config):
 	# print('static_path:', config['static_path'], 'path:', path)
 	full_path = os.path.join(config['static_path'], path)
 	# print('full_path:', full_path)
-	if not os.path.exists(full_path):
+	if not os.path.isfile(full_path):
 		req.wfile.write(b'HTTP/1.1 404 Not Found\n\nNot Found')
 		return
 	[path, name] = os.path.split(path)
