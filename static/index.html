@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css" />
+<link rel="stylesheet" type="text/css" href="/static/css/nmrate.css" />
+<script type="text/javascript" src="/static/scripts/jquery-3.2.1.min.js"></script>
+<script type="text/javascript" src="/static/scripts/js.cookie.js"></script>
+<script type="text/javascript" src="/static/scripts/colormap_grayscale.js"></script>
+<script type="text/javascript" src="/static/scripts/colormap_jet.js"></script>
+<script type="text/javascript" src="/static/scripts/nmrate.js"></script>
+</head>
+<body>
+
+<div class="nmrate">
+	<p>
+	<button title="User" id="user_btn"><i class="fa fa-user-circle"></i> <span id="user_name">User 1</span></button>
+	<button title="Previous Subject"><i class="fa fa-caret-square-o-left"></i></button>
+	<i class="fa fa-address-book-o" title="Select subject" ></i>
+	<select id="subjects_dropdown" title="Select subject">
+		<option>Loading...</option>
+	</select>
+	<button title="Next Subject"><i class="fa fa-caret-square-o-right"></i></button>
+	<i class="fa fa-eye" title="Color Map"></i>
+	<select id="colormap_dropdown" title="Color Map">
+		<option value="grayscale">Grayscale</option>
+		<option value="jet">Jet</option>
+	</select>
+
+	<i class="fa fa-star"></i>
+	<i class="fa fa-star"></i>
+	<i class="fa fa-star"></i>
+	<i class="fa fa-star-half-o"></i>
+	<i class="fa fa-star-o"></i>
+	<i class="fa fa-star-o"></i>
+	<i class="fa fa-star-o"></i>
+	<i class="fa fa-star-o"></i>
+	<i class="fa fa-star-o"></i>
+	<i class="fa fa-star-o"></i>
+
+	</p>
+	
+	<div id="display_grid"></div>
+
+	<!-- <table>
+
+	<tr>
+	<td>T1</td>
+	<td>T2s</td>
+	<td>MT</td>
+	<td>PD</td>
+	<td>A</td>
+	</tr>
+
+	<tr>
+	<td><img src="/xy_slice?subject=s1&modality=T1&z=1" /></td>
+	<td><img src="/xy_slice?subject=s1&modality=T2s&z=1" /></td>
+	<td><img src="/xy_slice?subject=s1&modality=MT&z=1" /></td>
+	<td><img src="/xy_slice?subject=s1&modality=PD&z=1" /></td>
+	<td><img src="/xy_slice?subject=s1&modality=A&z=1" /></td>
+	</tr>
+
+	<tr>
+	<td><img src="/xz_slice?subject=s1&modality=T1&y=64" /></td>
+	<td><img src="/xz_slice?subject=s1&modality=T2s&y=64" /></td>
+	<td><img src="/xz_slice?subject=s1&modality=MT&y=64" /></td>
+	<td><img src="/xz_slice?subject=s1&modality=PD&y=64" /></td>
+	<td><img src="/xz_slice?subject=s1&modality=A&y=64" /></td>
+	</tr>
+
+	<tr>
+	<td><img src="/yz_slice?subject=s1&modality=T1&x=64" /></td>
+	<td><img src="/yz_slice?subject=s1&modality=T2s&x=64" /></td>
+	<td><img src="/yz_slice?subject=s1&modality=MT&x=64" /></td>
+	<td><img src="/yz_slice?subject=s1&modality=PD&x=64" /></td>
+	<td><img src="/yz_slice?subject=s1&modality=A&x=64" /></td>
+	</tr>
+	
+	</table> -->
+</div>
+
+</body>
+</html>

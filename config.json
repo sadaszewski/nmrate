@@ -1,0 +1,29 @@
+{
+	"modalities": ["T1", "T2s", "MT", "PD", "A"],
+	"modality_paths": {
+		"T1": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanT1.nii",
+		"T2s": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanT2s.nii",
+		"MT": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanMT.nii",
+		"PD": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanPD.nii",
+		"A": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanA.nii"
+	},
+	"modality_windows": {
+		"T1": [0, 2],
+		"T2s": [0, 2],
+		"MT": [0, 2],
+		"PD": [0, 2],
+		"A": [0, 2]
+	},
+	"subjects_wildcard": "F:/Users/sadaszew/workspace/nmrate/data/s*",
+	"rating_range": [1, 10],
+	"secret": "rh130ruy1dm13[rj-tymsntp--2",
+	"static_path": "F:/Users/sadaszew/workspace/nmrate/static",
+	"mime_types": {
+		"js": "text/javascript",
+		"png": "image/png",
+		"jpg": "image/jpeg",
+		"html": "text/html",
+		"css": "text/css",
+		"json": "text/json"
+	}
+}
