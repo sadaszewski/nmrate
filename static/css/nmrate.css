@@ -1,7 +1,8 @@
-body { background-color: black; color: white; }
-.nmrate button { background-color: black; color: white; border: none; }
-.nmrate button:active { color: #aaa; }
-.nmrate select { background-color: black; color: white; border: none; }
-.nmrate input { background-color: black; color: white; border: none; }
+body { background-color: black; color: #ccc; }
+.nmrate button { background-color: black; color: #ccc; border: none; }
+.nmrate button:active { color: #888; }
+.nmrate select { background-color: black; color: #ccc; border: none; }
+.nmrate input { background-color: black; color: #ccc; border: none; }
 .nmrate input.imag_wnd { width: 32px; margin-left: 10px; }
 .nmrate canvas { image-rendering: pixelated; }
+.nmrate button.off { color: #555; }

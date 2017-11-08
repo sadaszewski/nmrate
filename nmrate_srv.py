@@ -84,6 +84,13 @@ def modalities(req, config):
 	req.wfile.write(json.dumps(config['modality_windows']).encode('utf-8'))
 	
 	
+@handle_url('/rating_range')
+def handle_rating_range(req, config):
+	req.wfile.write(b'HTTP/1.1 200 OK\n')
+	req.wfile.write(b'Content-Type: text/json\n\n')
+	req.wfile.write(json.dumps(config['rating_range']).encode('utf-8'))
+	
+	
 @handle_url("/volume_info")
 def volume_info(req, config):
 	req.wfile.write(b'HTTP/1.1 200 OK\n')
@@ -177,7 +184,9 @@ def subject_rate(req, config):
 		MyHandler.db.execute('INSERT OR REPLACE INTO ratings(user_id, subject, rating)'
 			' VALUES(?, ?, ?)', (user_id, subj, rating))
 		MyHandler.db.commit()
-	req.wfile.write(b'HTTP/1.1 200 OK\n\nOK')
+	req.wfile.write(b'HTTP/1.1 200 OK\n')
+	req.wfile.write(b'Content-Type: text/json\n\n')
+	req.wfile.write(json.dumps({'success': True}).encode('utf-8'))
 	
 	
 @handle_url("/get_rating")

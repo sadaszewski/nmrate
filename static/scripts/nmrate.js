@@ -17,6 +17,7 @@ $(document).ready(function() {
 	var vert_ax = [1, 2, 2];
 	var colormap = nmrate.colormap.grayscale;
 	
+	var password = Cookies.get('password');
 	var user_id = Cookies.get('user_id');
 	var subject = Cookies.get('subject');
 	
@@ -25,6 +26,7 @@ $(document).ready(function() {
 	var vol_info;
 	var xyz;
 	var slice_cache = [];
+	var xhairs = true;
 	
 	$('#user_name').text('User ' + user_id);
 	
@@ -43,8 +45,32 @@ $(document).ready(function() {
 				$('#subjects_dropdown').append(entry);
 			}
 			
-			get_modalities();
+			get_rating_range();
 		});
+	}
+	
+	function get_rating_range() {
+		$.getJSON('/rating_range', function(reply) {
+			$('#rating_dropdown option').remove();
+			$('#rating_dropdown').append($('<option />').text('Unrated'));
+			for (var i = reply[0]; i <= reply[1]; i++) {
+				var entry = $('<option />').val(i).text(i);
+				$('#rating_dropdown').append(entry);
+			}
+			
+			get_rating();
+		});
+	}
+	
+	function get_rating() {
+		var uri = '/get_rating?subject=' + encodeURIComponent(subject) +
+			'&user_id=' + encodeURIComponent(user_id) +
+			'&password=' + encodeURIComponent(password);
+		$.getJSON(uri, function(reply) {
+			$('#rating_dropdown option[value=' + reply['rating'] + ']')
+				.attr('selected', 'selected');
+			get_modalities();
+		}).fail(get_modalities);
 	}
 	
 	function get_modalities() {
@@ -116,6 +142,11 @@ $(document).ready(function() {
 					.attr('width', w)
 					.attr('height', h)
 					.attr('id', 'cell_' + i + '_' + k);
+				canvas.click(function(i, k) {
+					return function(e) {
+						on_canvas_click(i, k, e);
+					}
+				}(i, k));
 				cell.append(canvas);
 				
 				row.append(cell);
@@ -145,6 +176,8 @@ $(document).ready(function() {
 			for (var x = 0; x < w; x++) {
 				
 				var value = ary[x * h + y];
+				if (value > wnd_max) value = wnd_max;
+				else if (value < wnd_min) value = wnd_min;
 				value = Math.round((value - wnd_min) * 255 / (wnd_max - wnd_min));
 				value = colormap[value];
 				
@@ -156,6 +189,29 @@ $(document).ready(function() {
 				imgData.data[(y * w + x) * 4 + 3] = 255;
 			}
 		}
+		
+		if (xhairs) {
+			var xhair_x = xyz[horz_ax[k]];
+			
+			for (var y = 0; y < h; y++) {
+				var ofs = (y * w + xhair_x) * 4;
+				imgData.data[ofs + 0] = 255;
+				imgData.data[ofs + 1] = 255;
+				imgData.data[ofs + 2] = 255;
+				imgData.data[ofs + 3] = 255;
+			}
+			
+			var xhair_y = xyz[vert_ax[k]];
+			
+			for (var x = 0; x < w; x++) {
+				var ofs = (xhair_y * w + x) * 4;
+				imgData.data[ofs + 0] = 255;
+				imgData.data[ofs + 1] = 255;
+				imgData.data[ofs + 2] = 255;
+				imgData.data[ofs + 3] = 255;
+			}
+		}
+		
 		ctx.putImageData(imgData, 0, 0);
 		
 	}
@@ -207,6 +263,34 @@ $(document).ready(function() {
 			colormap = nmrate.colormap[$('#colormap_dropdown').val()];
 			refresh_all();
 		});
+		$('#xhairs_btn').click(function() {
+			xhairs = !xhairs;
+			if (!xhairs) {
+				$('#xhairs_btn').addClass('off');
+			} else {
+				$('#xhairs_btn').removeClass('off');
+			}
+			refresh_all();
+		});
+		$('#rating_dropdown').change(function() {
+			var uri = '/subject_rate?subject=' + encodeURIComponent(subject) +
+				'&user_id=' + encodeURIComponent(user_id) +
+				'&password=' + encodeURIComponent(password) +
+				'&rating=' + $(this).val();
+			$.getJSON(uri, function(reply) {
+				alert('Rating submitted successfully');
+			});
+		});
+	}
+	
+	function on_canvas_click(i, k, e) {
+		var canvas = $('#cell_' + i + '_' + k);
+		var x = e.pageX - canvas.offset().left;
+		var y = e.pageY - canvas.offset().top;
+		console.log('x: ' + x + ' y:' + y);
+		e.preventDefault();
+		e.stopPropagation();
+		return false;
 	}
 	
 	get_subjects();
