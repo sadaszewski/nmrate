@@ -60,12 +60,17 @@ def load_vol(fname):
 	return nii.load(fname)
 	
 	
+def get_subjects(config):
+	subjs = glob.glob(config['subjects_wildcard'])
+	subjs = list(sorted(map(lambda a: os.path.split(a)[-1], subjs)))
+	return subjs
+	
+		
 @handle_url("/subjects_list")
 def subject_list(req, config):
 	req.wfile.write(b'HTTP/1.1 200 OK\n')
 	req.wfile.write(b'Content-Type: text/json\n\n')
-	subjs = glob.glob(config['subjects_wildcard'])
-	subjs = list(map(lambda a: os.path.split(a)[-1], subjs))
+	subjs = get_subjects(config)
 	content = json.dumps(subjs)
 	req.wfile.write(content.encode('utf-8'))
 	
@@ -213,6 +218,61 @@ def handle_login(req, config):
 		req.wfile.write(json.dumps({'success': True}).encode('utf-8'))
 	else:
 		req.wfile.write(b'HTTP/1.1 403 Forbidden\n\nWrong credentials')
+		
+		
+@handle_url('/show_password')
+def show_password(req, config):
+	qs = parse_qs(urlparse(req.path).query)
+	user_id = int(qs['user_id'][0])
+	password = qs['password'][0]
+	target_user_id = int(qs['target_user_id'][0])
+	if user_id != 0:
+		raise ValueError('Only administrator (user 0) can issue this request.')
+	if not verify_password(user_id, password, config):
+		raise ValueError('Invalid password.')
+	target_password = gen_passwd(target_user_id, config)
+	req.wfile.write(b'HTTP/1.1 200 OK\n')
+	req.wfile.write(b'Content-Type: text/json\n\n')
+	req.wfile.write(json.dumps({'target_password': target_password}).encode('utf-8'))
+	
+	
+@handle_url('/get_stats')
+def get_stats(req, config):
+	qs = parse_qs(urlparse(req.path).query)
+	user_id = int(qs['user_id'][0])
+	password = qs['password'][0]
+	if user_id != 0:
+		raise ValueError('Only administrator (user 0) can issue this request.')
+	if not verify_password(user_id, password, config):
+		raise ValueError('Invalid password.')
+	with MyHandler.db_lock:
+		data = MyHandler.db.execute('SELECT subject, rating, COUNT(*)'
+			' FROM ratings GROUP BY subject, rating'
+			' ORDER BY subject, rating').fetchall()
+	lookup = defaultdict(lambda: defaultdict(lambda: 0))
+	for row in data:
+		lookup[row[0]][row[1]] = row[2]
+	subjs = get_subjects(config)
+	table = []
+	hdr = ['Subject', 'Mean']
+	rating_range = config['rating_range']
+	for rating in range(rating_range[0], rating_range[1] + 1):
+		hdr.append(str(rating))
+	table.append(hdr)
+	for sub in subjs:
+		row = [sub, -1]
+		sum = 0
+		sum_cnt = 0
+		for rating in range(rating_range[0], rating_range[1] + 1):
+			cnt = lookup[sub][rating]
+			row.append(cnt)
+			sum += cnt * rating
+			sum_cnt += cnt
+		row[1] = sum / sum_cnt
+		table.append(row)
+	req.wfile.write(b'HTTP/1.1 200 OK\n')
+	req.wfile.write(b'Content-Type: text/json\n\n')
+	req.wfile.write(json.dumps({'stats_table': table}).encode('utf-8'))
 	
 	
 @handle_url("/static")
@@ -239,9 +299,13 @@ def bootstrap_db(db):
 	db.execute('CREATE TABLE IF NOT EXISTS ratings(user_id INT, subject TEXT, rating INT)')
 	db.execute('CREATE UNIQUE INDEX IF NOT EXISTS u_s ON ratings(user_id, subject)')
 
+
+def gen_passwd(user_id, config):
+	return hashlib.sha1(('%d%s' % (user_id, config['secret'])).encode('utf-8')).hexdigest()[:6]
+	
 	
 def verify_password(user_id, passwd, config):
-	correct = hashlib.sha1(('%d%s' % (user_id, config['secret'])).encode('utf-8')).hexdigest()[:6]
+	correct = gen_passwd(user_id, config);
 	return (passwd == correct)
 	
 
