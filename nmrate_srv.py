@@ -155,7 +155,7 @@ def xy_slice(qs, vol):
 def xz_slice(qs, vol):
 	y = int(qs['y'][0])
 	slice = np.squeeze(vol.dataobj[:, y, :])
-	slice = slice[:, ::-1]
+	# slice = slice[:, ::-1]
 	return slice
 
 	
@@ -164,7 +164,7 @@ def xz_slice(qs, vol):
 def yz_slice(qs, vol):
 	x = int(qs['x'][0])
 	slice = np.squeeze(vol.dataobj[x, :, :])
-	slice = slice[:, ::-1]
+	# slice = slice[:, ::-1]
 	return slice
 	
 	

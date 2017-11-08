@@ -15,6 +15,7 @@ $(document).ready(function() {
 	var ax_idx = [2, 1, 0];
 	var horz_ax = [0, 0, 1];
 	var vert_ax = [1, 2, 2];
+	var ax_flip = [false, false, true];
 	var colormap = nmrate.colormap.grayscale;
 	
 	var password = Cookies.get('password');
@@ -25,7 +26,7 @@ $(document).ready(function() {
 	var modality_windows;
 	var vol_info;
 	var xyz;
-	var slice_cache = [];
+	var slice_cache = new LRUMap(128);
 	var xhairs = true;
 	
 	$('#user_name').text('User ' + user_id);
@@ -156,11 +157,39 @@ $(document).ready(function() {
 		// $('#display_grid').remove('table');
 		$('#display_grid').append(table);
 		
-		fetch_slices();
+		fetch_all_slices();
 	}
 	
-	function update_canvas(i, k) {
-		var buffer = slice_cache[i * ori.length + k];
+	function fetch_slice(i, k) {
+		var uri = '/' + ori[k] + '_slice?subject=' + encodeURIComponent(subject) +
+			'&modality=' + encodeURIComponent(modalities[i]) +
+			'&' + ax_name[k] + '=' + encodeURIComponent(xyz[ax_idx[k]]);
+			
+		if (slice_cache.has(uri)) {
+			update_canvas(i, k, slice_cache.get(uri));
+			return;
+		}
+		
+		console.log('Loading ' + uri + ' ...');
+		var xhr = new XMLHttpRequest();
+		xhr.responseType = 'arraybuffer';
+		xhr.open('GET', uri, true);
+		xhr.onload = function(i, k, xhr) { return function(ev) {
+			if (xhr.readyState != 4) return;
+			var buffer = xhr.response;
+			console.log('Retrieved i:' + i + ' k:' + k);
+			// slice_cache[i * ori.length + k] = buffer;
+			slice_cache.set(uri, buffer);
+			update_canvas(i, k, buffer);
+		} } (i, k, xhr);
+		xhr.onerror = function(uri) { return function(ev) {
+			alert('Error retrieving ' + uri);
+		} } (uri);
+		xhr.send(null);
+	}
+	
+	function update_canvas(i, k, buffer) {
+		// var buffer = slice_cache.get[i * ori.length + k];
 		var ary = new Float64Array(buffer);
 		var canvas = $('#cell_' + i + '_' + k).get(0);
 		var ctx = canvas.getContext('2d');
@@ -173,6 +202,11 @@ $(document).ready(function() {
 		
 		var imgData = ctx.getImageData(0, 0, w, h);
 		for (var y = 0; y < h; y++) {
+			var y_1 = y;
+			if (ax_flip[vert_ax[k]]) {
+				y_1 = h - y_1 - 1;
+			}
+			
 			for (var x = 0; x < w; x++) {
 				
 				var value = ary[x * h + y];
@@ -181,17 +215,25 @@ $(document).ready(function() {
 				value = Math.round((value - wnd_min) * 255 / (wnd_max - wnd_min));
 				value = colormap[value];
 				
-				if (value === undefined) continue;
+				if (value === undefined) continue; // value = wnd_min;
 				
-				imgData.data[(y * w + x) * 4 + 0] = value[0];
-				imgData.data[(y * w + x) * 4 + 1] = value[1];
-				imgData.data[(y * w + x) * 4 + 2] = value[2];
-				imgData.data[(y * w + x) * 4 + 3] = 255;
+				var x_1 = x;
+				if (ax_flip[horz_ax[k]]) {
+					x_1 = w - x_1 - 1;
+				}
+				
+				var ofs = (y_1 * w + x_1) * 4;
+				imgData.data[ofs + 0] = value[0];
+				imgData.data[ofs + 1] = value[1];
+				imgData.data[ofs + 2] = value[2];
+				imgData.data[ofs + 3] = 255;
 			}
 		}
 		
 		if (xhairs) {
 			var xhair_x = xyz[horz_ax[k]];
+			if (ax_flip[horz_ax[k]]) xhair_x =
+				vol_info['shape'][horz_ax[k]] - xhair_x - 1;
 			
 			for (var y = 0; y < h; y++) {
 				var ofs = (y * w + xhair_x) * 4;
@@ -202,6 +244,8 @@ $(document).ready(function() {
 			}
 			
 			var xhair_y = xyz[vert_ax[k]];
+			if (ax_flip[vert_ax[k]]) xhair_y =
+				vol_info['shape'][vert_ax[k]] - xhair_y - 1;
 			
 			for (var x = 0; x < w; x++) {
 				var ofs = (xhair_y * w + x) * 4;
@@ -216,39 +260,21 @@ $(document).ready(function() {
 		
 	}
 	
-	function fetch_slices() {
-		var queue = [];
-		
+	function fetch_all_slices() {
 		for (var i = 0; i < modalities.length; i++) {
 			for (var k = 0; k < ori.length; k++) {
-				var uri = '/' + ori[k] + '_slice?subject=' + encodeURIComponent(subject) +
-					'&modality=' + encodeURIComponent(modalities[i]) +
-					'&' + ax_name[k] + '=' + encodeURIComponent(xyz[ax_idx[k]]);
-				console.log('Loading ' + uri + ' ...');
-				var xhr = new XMLHttpRequest();
-				xhr.responseType = 'arraybuffer';
-				xhr.open('GET', uri, true);
-				xhr.onload = function(i, k, xhr) { return function(ev) {
-					if (xhr.readyState != 4) return;
-					var buffer = xhr.response;
-					console.log('Retrieved i:' + i + ' k:' + k);
-					slice_cache[i * ori.length + k] = buffer;
-					update_canvas(i, k);
-				} } (i, k, xhr);
-				xhr.onerror = function(uri) { return function(ev) {
-					alert('Error retrieving ' + uri);
-				} } (uri);
-				xhr.send(null);
+				fetch_slice(i, k);
 			}
 		}
 	}
 	
 	function refresh_all() {
-		for (var i = 0; i < modalities.length; i++) {
+		fetch_all_slices();
+		/* for (var i = 0; i < modalities.length; i++) {
 			for (var k = 0; k < ori.length; k++) {
 				update_canvas(i, k);
 			}
-		}
+		} */
 	}
 	
 	function set_callbacks() {
@@ -288,6 +314,17 @@ $(document).ready(function() {
 		var x = e.pageX - canvas.offset().left;
 		var y = e.pageY - canvas.offset().top;
 		console.log('x: ' + x + ' y:' + y);
+		
+		var w = vol_info['shape'][horz_ax[k]];
+		var h = vol_info['shape'][vert_ax[k]];
+		if (x < 0) x = 0; else if (x >= w) x = w;
+		if (y < 0) y = 0; else if (y >= h) y = h;
+		if (ax_flip[horz_ax[k]]) x = w - x;
+		if (ax_flip[vert_ax[k]]) y = h - y;
+		xyz[horz_ax[k]] = x;
+		xyz[vert_ax[k]] = y;
+		fetch_all_slices();
+		
 		e.preventDefault();
 		e.stopPropagation();
 		return false;
