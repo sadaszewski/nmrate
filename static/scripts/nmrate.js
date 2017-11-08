@@ -53,7 +53,7 @@ $(document).ready(function() {
 	function get_rating_range() {
 		$.getJSON('/rating_range', function(reply) {
 			$('#rating_dropdown option').remove();
-			$('#rating_dropdown').append($('<option />').text('Unrated'));
+			$('#rating_dropdown').append($('<option />').text('--'));
 			for (var i = reply[0]; i <= reply[1]; i++) {
 				var entry = $('<option />').val(i).text(i);
 				$('#rating_dropdown').append(entry);
@@ -169,6 +169,18 @@ $(document).ready(function() {
 			update_canvas(i, k, slice_cache.get(uri));
 			return;
 		}
+		
+		var canvas = $('#cell_' + i + '_' + k).get(0);
+		var ctx = canvas.getContext('2d');
+		var w = vol_info['shape'][horz_ax[k]];
+		var h = vol_info['shape'][vert_ax[k]];
+		ctx.rect(0, 0, w, h);
+		ctx.fillStyle = 'rgba(0,0,0,0.5)';
+		ctx.fill();
+		ctx.font = '30px Arial';
+		ctx.fillStyle = 'white';
+		var meas = ctx.measureText('Loading...');
+		ctx.fillText('Loading...', w/2 - meas.width/2, h/2+15);
 		
 		console.log('Loading ' + uri + ' ...');
 		var xhr = new XMLHttpRequest();

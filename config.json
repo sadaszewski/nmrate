@@ -25,5 +25,8 @@
 		"html": "text/html",
 		"css": "text/css",
 		"json": "text/json"
-	}
+	},
+	"enable_gzip": false,
+	"port": 8080,
+	"address": ""
 }

@@ -21,8 +21,10 @@ import sqlite3
 from threading import RLock
 import hashlib
 from collections import defaultdict
+import gzip
+import threading
 	
-		
+
 class MyHandler(BaseHTTPRequestHandler):
 	def __init__(self, req, cli_addr, srv):
 		super(MyHandler, self).__init__(req, cli_addr, srv)
@@ -43,7 +45,7 @@ class MyHandler(BaseHTTPRequestHandler):
 MyHandler.url_map = []
 MyHandler.mime_types = defaultdict(lambda: 'application/octet-stream')
 
-class MyServer(TCPServer):
+class MyServer(ThreadingMixIn, TCPServer):
 	def __init__(self, addr):
 		super(MyServer, self).__init__(addr, MyHandler)
 		
@@ -104,7 +106,7 @@ def volume_info(req, config):
 	subj = qs['subject'][0]
 	mod = qs['modality'][0]
 	fname = config['modality_paths'][mod].format(subject=subj, modality=mod)
-	print('subj:', subj, 'mod:', mod, 'fname:', fname)
+	# print('subj:', subj, 'mod:', mod, 'fname:', fname)
 	vol = load_vol(fname)
 	# print('vol:', vol)
 	content = json.dumps({
@@ -125,8 +127,10 @@ def slice_common(sel_fn):
 		fname = config['modality_paths'][mod].format(subject=subj, modality=mod)
 		vol = load_vol(fname)
 		content = sel_fn(qs, vol).tostring()
+		if config['enable_gzip']: content = gzip.compress(content)
 		req.wfile.write(b'HTTP/1.1 200 OK\n')
 		req.wfile.write(b'Content-Type: application/octet-stream\n')
+		if config['enable_gzip']: req.wfile.write(b'Content-Encoding: gzip\n')
 		req.wfile.write(('Content-Length: %d\n\n' % len(content)).encode('utf-8'))
 		req.wfile.write(content)
 	return inner
@@ -315,12 +319,16 @@ def main():
 	MyHandler.db = db
 	MyHandler.db_lock = RLock()
 	with open('config.json', 'r') as f:
-		MyHandler.config = json.loads(f.read())
+		config = json.loads(f.read())
+	MyHandler.config = config
 	MyHandler.mime_types.update(MyHandler.config['mime_types'])
-	srv = MyServer(('', 8080))
-	print('Serving...')
-	print(MyHandler.url_map)
+	srv = MyServer((config['address'], config['port']))
+	print('Serving at %s:%d ...' % (config['address'], config['port']))
+	# print(MyHandler.url_map)
 	srv.serve_forever()
+	# daemon = threading.Thread(target=)
+	# daemon.setDaemon(True)
+	# daemon.start()
 	
 
 
