@@ -307,12 +307,32 @@ $(document).ready(function() {
 				alert('Rating submitted successfully');
 			});
 		});
+		$('#subjects_dropdown').change(function() {
+			Cookies.set('subject', $(this).val());
+			window.location.reload();
+		});
+		$('#prev_subj_btn').click(function() {
+			var subjects = $('#subjects_dropdown option');
+			var cur = $('#subjects_dropdown option:selected').index();
+			if (cur > 0) {
+				Cookies.set('subject', $(subjects[cur - 1]).val());
+				window.location.reload();
+			}
+		});
+		$('#next_subj_btn').click(function() {
+			var subjects = $('#subjects_dropdown option');
+			var cur = $('#subjects_dropdown option:selected').index();
+			if (cur < subjects.length - 1) {
+				Cookies.set('subject', $(subjects[cur + 1]).val());
+				window.location.reload();
+			}
+		});
 	}
 	
 	function on_canvas_click(i, k, e) {
 		var canvas = $('#cell_' + i + '_' + k);
-		var x = e.pageX - canvas.offset().left;
-		var y = e.pageY - canvas.offset().top;
+		var x = Math.round(e.pageX - canvas.offset().left);
+		var y = Math.round(e.pageY - canvas.offset().top);
 		console.log('x: ' + x + ' y:' + y);
 		
 		var w = vol_info['shape'][horz_ax[k]];
