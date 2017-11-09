@@ -1,3 +1,5 @@
+http://adared.ch/software/nmrate-medical-image-rating-system
+
 WE start by looking at the config file: config.json
 
 
