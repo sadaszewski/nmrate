@@ -118,8 +118,9 @@ $(document).ready(function() {
 		
 		var val = $('#wnd_min_max_' + i).val();
 		
+		val = val.split('↔').join(' ');
 		val = val.split(new RegExp('[ ]+'));
-		val = val.filter(function(a) { return (a != '↔'); });
+		// val = val.filter(function(a) { return (a != '↔'); });
 		var new_val = '';
 		
 		if (val[0] !== undefined && val[0] != '')
