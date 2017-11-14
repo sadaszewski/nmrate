@@ -112,6 +112,46 @@ $(document).ready(function() {
 		});
 	}
 	
+	function sanitize_imag_wnd(i) {
+		var def_min = modality_windows[modalities[i]][0];
+		var def_max = modality_windows[modalities[i]][1];
+		
+		var val = $('#wnd_min_max_' + i).val();
+		
+		val = val.split(new RegExp('[ ]+'));
+		val = val.filter(function(a) { return (a != '↔'); });
+		var new_val = '';
+		
+		if (val[0] !== undefined && val[0] != '')
+			new_val += val[0];
+		else
+			new_val += def_min;
+		
+		new_val += ' ↔ ';
+		
+		if (val[1] !== undefined && val[1] != '')
+			new_val += val[1];
+		else 
+			new_val += def_max;
+		
+		$('#wnd_min_max_' + i).val(new_val);
+	}
+	
+	function sanitize_typing_imag_wnd(i) {
+		return function() {
+			var val = $(this).val();
+			if (val.indexOf('↔') == -1) {
+				sanitize_imag_wnd(i);
+			}
+		};
+	}
+	
+	function sanitize_change_imag_wnd(i) {
+		return function() {
+			sanitize_imag_wnd(i);
+		};
+	}
+	
 	function make_display_grid() {
 		var shape = vol_info[0]['shape'];
 		
@@ -128,33 +168,8 @@ $(document).ready(function() {
 				.attr('id', 'wnd_min_max_' + i)
 				.val(default_val)
 				.css({'min-width': '64px'})
-				.on('change keyup paste', function(default_val) { return function() {
-					var val = $(this).val();
-					if (val.length == 0) {
-						$(this).val(default_val);
-					} else if (val.indexOf('↔') == -1) {
-						val = val.split(' ');
-						val = val.filter(function(a) { return (a != ''); });
-						if (val.length == 2) {
-							val = val[0] + ' ↔ ' + val[1];
-						} else {
-							$(this).val(default_val);
-						}
-					}
-					// val = val.split('↔');
-					
-				}}(default_val))
-				.change(function (default_val) { return function() {
-					var val = $(this).val();
-					val = val.split(' ').join('').split('↔');
-					val = val.filter(function(a) { return (a != ''); });
-					// var new_val = '';
-					if (val.length != 2) {
-						$(this).val(default_val);
-					} else {
-						$(this).val(val[0] + ' ↔ ' + val[1]);
-					}
-				}} (default_val))
+				.on('change keyup paste', sanitize_typing_imag_wnd(i))
+				.change(sanitize_change_imag_wnd(i))
 				.change(refresh_all);
 			/* var wnd_max = $('<input type="text" class="imag_wnd" />')
 				.attr('id', 'wnd_max_' + i)
