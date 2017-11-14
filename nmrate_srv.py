@@ -45,7 +45,7 @@ class MyHandler(BaseHTTPRequestHandler):
 MyHandler.url_map = []
 MyHandler.mime_types = defaultdict(lambda: 'application/octet-stream')
 
-class MyServer(TCPServer):
+class MyServer(ThreadingMixIn, TCPServer):
 	def __init__(self, addr):
 		super(MyServer, self).__init__(addr, MyHandler)
 		
