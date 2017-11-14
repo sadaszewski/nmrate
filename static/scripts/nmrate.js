@@ -219,7 +219,7 @@ $(document).ready(function() {
 	function fetch_slice(i, k) {
 		var uri = '/' + ori[k] + '_slice?subject=' + encodeURIComponent(subject) +
 			'&modality=' + encodeURIComponent(modalities[i]) +
-			'&' + ax_name[k] + '=' + encodeURIComponent(xyz[ax_idx[k]]);
+			'&' + ax_name[k] + '=' + encodeURIComponent(Math.round(xyz[ax_idx[k]]+0.5));
 			
 		if (slice_cache.has(uri)) {
 			update_canvas(i, k, slice_cache.get(uri));
@@ -427,8 +427,8 @@ $(document).ready(function() {
 		var h = vol_info[i]['shape'][vert_ax[k]];
 		if (x < 0) x = 0; else if (x >= w) x = w;
 		if (y < 0) y = 0; else if (y >= h) y = h;
-		if (ax_flip[horz_ax[k]]) x = w - x;
-		if (ax_flip[vert_ax[k]]) y = h - y;
+		if (ax_flip[horz_ax[k]]) x = w - 1 - x;
+		if (ax_flip[vert_ax[k]]) y = h - 1 - y;
 		xyz[horz_ax[k]] = x;
 		xyz[vert_ax[k]] = y;
 		fetch_all_slices();
