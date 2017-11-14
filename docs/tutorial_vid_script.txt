@@ -1,0 +1,184 @@
+Hello, this is a video tutorial for the new 
+NMRate (NRM - Nuclear Magnetic Resonance) NMR Rating Tool.
+
+WE start by looking at the config file: config.json
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+We can see the following keys:
+
+modalities - containing the list of modalities
+
+modality_windows - containing modality image windows (min, max)
+
+subjects_wildcard - this points to where are subjects are stored,
+if we're using different organization than a directory per subjects
+it should point to a list of empty directories with the same names
+as subject names.
+
+
+rating_range - range of ratings (min/max inclusive)
+
+secret - a secret value used to generate password for the users
+
+static_path - path to static resources
+
+mime_types - MIME types corresponding to different extensions
+
+enable_gzip - whether to enable GZIP compression
+
+ Now we can start the software. We need Python, PILLOW, numpy and nibabel
+
+Once the server writes "Serving..." we can open the browser...
+
+OK now the interesting part, to get the admin password we need to copy the secret key
+
+go to http://www.sha1-online.com/
+
+and write "0" followed by the secret key
+
+then the first six characters is out admin password: b72f91
+
+
+
+in the top row we have the following icons:
+
+User
+
+Subject
+
+Colormap
+
+Crosshairs
+
+Rating
+
+by clicking on the images we navigate inside the volume....
+
+to zoom we can zoom the entire page... e.g. Ctrl + Scroll Mouse Wheel
+
+Very interesting!
+
+I will just show how they work...
+
+Now we can see the admin panel.
+
+In the admin panel (only accessible as User 0)
+
+we can see all other users passwords. So these we would give to our raters.
+
+
+
+
+
+
+
+
+
+
+
+
+Below we can see the results table.
+
+First column contains subject names,
+
+second column contains subject mean score
+
+The following columns contain number of users that gave 
+the given score to the subject - a histogram
+
+That's pretty much all there is to it 
+
+I will finish by logging out.
+
+Thank you and enjoy!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

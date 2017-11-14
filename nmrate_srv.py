@@ -45,7 +45,7 @@ class MyHandler(BaseHTTPRequestHandler):
 MyHandler.url_map = []
 MyHandler.mime_types = defaultdict(lambda: 'application/octet-stream')
 
-class MyServer(ThreadingMixIn, TCPServer):
+class MyServer(TCPServer):
 	def __init__(self, addr):
 		super(MyServer, self).__init__(addr, MyHandler)
 		
@@ -57,9 +57,51 @@ def handle_url(url):
 	return inner
 	
 	
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=32)
 def load_vol(fname):
 	return nii.load(fname)
+	
+	
+@lru_cache(maxsize=32)
+def reslice_xy(fname):
+	config = MyHandler.config
+	vol = load_vol(fname).dataobj.get_unscaled()
+	vol = np.ascontiguousarray(np.array(vol))
+	ret = []
+	for i in range(0, vol.shape[2]):
+		slice = vol[:, :, i].tostring()
+		if config['enable_gzip']:
+			slice = gzip.compress(slice)
+		ret.append(slice)
+	return ret
+	
+
+@lru_cache(maxsize=32)
+def reslice_xz(fname):
+	config = MyHandler.config
+	vol = load_vol(fname).dataobj.get_unscaled()
+	vol = np.ascontiguousarray(np.array(vol).transpose([0, 2, 1]))
+	ret = []
+	for i in range(0, vol.shape[2]):
+		slice = vol[:, :, i].tostring()
+		if config['enable_gzip']:
+			slice = gzip.compress(slice)
+		ret.append(slice)
+	return ret
+	
+	
+@lru_cache(maxsize=32)
+def reslice_yz(fname):
+	config = MyHandler.config
+	vol = load_vol(fname).dataobj.get_unscaled()
+	vol = np.ascontiguousarray(np.array(vol).transpose([1, 2, 0]))
+	ret = []
+	for i in range(0, vol.shape[2]):
+		slice = vol[:, :, i].tostring()
+		if config['enable_gzip']:
+			slice = gzip.compress(slice)
+		ret.append(slice)
+	return ret
 	
 	
 def get_subjects(config):
@@ -111,10 +153,10 @@ def volume_info(req, config):
 	# print('vol:', vol)
 	content = json.dumps({
 		'shape': vol.shape,
-		'affine': np.ravel(vol.affine).tolist()
-		# 'dtype': vol.dataobj.dtype.name,
-		# 'slope': vol.dataobj.slope,
-		# 'inter': vol.dataobj.inter
+		'affine': np.ravel(vol.affine).tolist(),
+		'dtype': vol.dataobj.dtype.name,
+		'slope': vol.dataobj.slope,
+		'inter': vol.dataobj.inter
 	})
 	req.wfile.write(content.encode('utf-8'))
 	
@@ -125,9 +167,9 @@ def slice_common(sel_fn):
 		subj = qs['subject'][0]
 		mod = qs['modality'][0]
 		fname = config['modality_paths'][mod].format(subject=subj, modality=mod)
-		vol = load_vol(fname)
-		content = sel_fn(qs, vol).tostring()
-		if config['enable_gzip']: content = gzip.compress(content)
+		# vol = load_vol(fname)
+		content = sel_fn(qs, fname)
+		# if config['enable_gzip']: content = gzip.compress(content)
 		req.wfile.write(b'HTTP/1.1 200 OK\n')
 		req.wfile.write(b'Content-Type: application/octet-stream\n')
 		if config['enable_gzip']: req.wfile.write(b'Content-Encoding: gzip\n')
@@ -154,25 +196,28 @@ def slice_common_png(sel_fn):
 
 @handle_url("/xy_slice")
 @slice_common
-def xy_slice(qs, vol):
+def xy_slice(qs, fname):
+	vol = reslice_xy(fname)
 	z = int(qs['z'][0])
-	return vol.dataobj[:, :, z]
+	return vol[z]
 	
 	
 @handle_url("/xz_slice")
 @slice_common
-def xz_slice(qs, vol):
+def xz_slice(qs, fname):
+	vol = reslice_xz(fname)
 	y = int(qs['y'][0])
-	slice = np.squeeze(vol.dataobj[:, y, :])
+	slice = vol[y]
 	# slice = slice[:, ::-1]
 	return slice
 
 	
 @handle_url("/yz_slice")
 @slice_common
-def yz_slice(qs, vol):
+def yz_slice(qs, fname):
+	vol = reslice_yz(fname)
 	x = int(qs['x'][0])
-	slice = np.squeeze(vol.dataobj[x, :, :])
+	slice = vol[x]
 	# slice = slice[:, ::-1]
 	return slice
 	

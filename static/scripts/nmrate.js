@@ -24,7 +24,7 @@ $(document).ready(function() {
 	
 	var modalities;
 	var modality_windows;
-	var vol_info;
+	var vol_info = new Array();
 	var xyz;
 	var slice_cache = new LRUMap(128);
 	var xhairs = true;
@@ -86,29 +86,34 @@ $(document).ready(function() {
 		$.getJSON('/modality_windows', function(reply) {
 			modality_windows = reply;
 			// alert('modality_windows:' + modality_windows);
-			get_volume_info();
+			get_volume_info(0);
 		});
 	}
 	
-	function get_volume_info() {
+	function get_volume_info(mod) {
 		var uri = '/volume_info?subject=' + encodeURIComponent(subject) +
-			'&modality=' + encodeURIComponent(modalities[0]);
+			'&modality=' + encodeURIComponent(modalities[mod]);
 		// alert(uri);
 		$.getJSON(uri, function(reply) {
 			
-			vol_info = reply;
+			vol_info[mod] = reply;
 			// alert(vol_info['shape']);
-			var shape = vol_info['shape'];
-			xyz = [Math.floor(shape[0]/2),
-				Math.floor(shape[1]/2),
-				Math.floor(shape[2]/2)];
+			var shape = reply['shape'];
+			
+			if (mod == modalities.length - 1) {
+				xyz = [Math.floor(shape[0]/2),
+					Math.floor(shape[1]/2),
+					Math.floor(shape[2]/2)];
 				
-			make_display_grid();
+				make_display_grid();
+			} else {
+				get_volume_info(mod + 1);
+			}
 		});
 	}
 	
 	function make_display_grid() {
-		var shape = vol_info['shape'];
+		var shape = vol_info[0]['shape'];
 		
 		var table = $('<table />');
 		
@@ -117,16 +122,47 @@ $(document).ready(function() {
 			var cell = $('<td></td>');
 			cell.append(modalities[i]);
 			cell.append(' <i class="fa fa-adjust"></i>');
-			var wnd_min = $('<input type="text" class="imag_wnd" />')
-				.attr('id', 'wnd_min_' + i)
-				.val(modality_windows[modalities[i]][0])
+			var default_val = modality_windows[modalities[i]][0] + ' ↔ ' +
+					modality_windows[modalities[i]][1];
+			var wnd_min_max = $('<input type="text" class="imag_wnd" />')
+				.attr('id', 'wnd_min_max_' + i)
+				.val(default_val)
+				.css({'min-width': '64px'})
+				.on('change keyup paste', function(default_val) { return function() {
+					var val = $(this).val();
+					if (val.length == 0) {
+						$(this).val(default_val);
+					} else if (val.indexOf('↔') == -1) {
+						val = val.split(' ');
+						val = val.filter(function(a) { return (a != ''); });
+						if (val.length == 2) {
+							val = val[0] + ' ↔ ' + val[1];
+						} else {
+							$(this).val(default_val);
+						}
+					}
+					// val = val.split('↔');
+					
+				}}(default_val))
+				.change(function (default_val) { return function() {
+					var val = $(this).val();
+					val = val.split(' ').join('').split('↔');
+					val = val.filter(function(a) { return (a != ''); });
+					// var new_val = '';
+					if (val.length != 2) {
+						$(this).val(default_val);
+					} else {
+						$(this).val(val[0] + ' ↔ ' + val[1]);
+					}
+				}} (default_val))
 				.change(refresh_all);
-			var wnd_max = $('<input type="text" class="imag_wnd" />')
+			/* var wnd_max = $('<input type="text" class="imag_wnd" />')
 				.attr('id', 'wnd_max_' + i)
+				.css({'min-width': '16px'})
 				.val(modality_windows[modalities[i]][1])
-				.change(refresh_all);
-			cell.append(wnd_min);
-			cell.append(wnd_max);
+				.change(refresh_all); */
+			cell.append(wnd_min_max);
+			// cell.append(wnd_max);
 			header.append(cell);
 		}
 		table.append(header);
@@ -157,6 +193,11 @@ $(document).ready(function() {
 		// $('#display_grid').remove('table');
 		$('#display_grid').append(table);
 		
+		/* var for_autosize = $('.imag_wnd');
+		for (var i = 0; i < for_autosize.length; i++) {
+			autosizeInput(for_autosize.get(i), {'minWidth': true});
+		} */
+		
 		fetch_all_slices();
 	}
 	
@@ -172,8 +213,8 @@ $(document).ready(function() {
 		
 		var canvas = $('#cell_' + i + '_' + k).get(0);
 		var ctx = canvas.getContext('2d');
-		var w = vol_info['shape'][horz_ax[k]];
-		var h = vol_info['shape'][vert_ax[k]];
+		var w = vol_info[i]['shape'][horz_ax[k]];
+		var h = vol_info[i]['shape'][vert_ax[k]];
 		ctx.rect(0, 0, w, h);
 		ctx.fillStyle = 'rgba(0,0,0,0.5)';
 		ctx.fill();
@@ -202,15 +243,28 @@ $(document).ready(function() {
 	
 	function update_canvas(i, k, buffer) {
 		// var buffer = slice_cache.get[i * ori.length + k];
-		var ary = new Float64Array(buffer);
+		var dtype = vol_info[i]['dtype'];
+		var known_dtypes = ['int8', 'int16', 'int32', 'int64',
+			'uint8', 'uint16', 'uint32', 'uint64',
+			'float32', 'float64'];
+		if (known_dtypes.indexOf(dtype) == -1) {
+			alert('Unknown dtype');
+			return;
+		}
+		var ary_cls_name = dtype.substr(0, 1).toUpperCase() + dtype.substr(1) + 'Array';
+		var ary = new window[ary_cls_name](buffer);
 		var canvas = $('#cell_' + i + '_' + k).get(0);
 		var ctx = canvas.getContext('2d');
 		
-		var wnd_min = Number($('#wnd_min_' + i).val());
-		var wnd_max = Number($('#wnd_max_' + i).val());
-		var shape = vol_info['shape'];
+		var val = $('#wnd_min_max_' + i).val();
+		val = val.split(' ').join('').split('↔');
+		var wnd_min = Number(val[0]);
+		var wnd_max = Number(val[1]);
+		var shape = vol_info[i]['shape'];
 		var w = shape[horz_ax[k]];
 		var h = shape[vert_ax[k]];
+		var slope = vol_info[i]['slope'];
+		var inter = vol_info[i]['inter'];
 		
 		var imgData = ctx.getImageData(0, 0, w, h);
 		for (var y = 0; y < h; y++) {
@@ -221,7 +275,7 @@ $(document).ready(function() {
 			
 			for (var x = 0; x < w; x++) {
 				
-				var value = ary[x * h + y];
+				var value = ary[x * h + y] * slope + inter;
 				if (value > wnd_max) value = wnd_max;
 				else if (value < wnd_min) value = wnd_min;
 				value = Math.round((value - wnd_min) * 255 / (wnd_max - wnd_min));
@@ -245,7 +299,7 @@ $(document).ready(function() {
 		if (xhairs) {
 			var xhair_x = xyz[horz_ax[k]];
 			if (ax_flip[horz_ax[k]]) xhair_x =
-				vol_info['shape'][horz_ax[k]] - xhair_x - 1;
+				vol_info[i]['shape'][horz_ax[k]] - xhair_x - 1;
 			
 			for (var y = 0; y < h; y++) {
 				var ofs = (y * w + xhair_x) * 4;
@@ -257,7 +311,7 @@ $(document).ready(function() {
 			
 			var xhair_y = xyz[vert_ax[k]];
 			if (ax_flip[vert_ax[k]]) xhair_y =
-				vol_info['shape'][vert_ax[k]] - xhair_y - 1;
+				vol_info[i]['shape'][vert_ax[k]] - xhair_y - 1;
 			
 			for (var x = 0; x < w; x++) {
 				var ofs = (xhair_y * w + x) * 4;
@@ -347,8 +401,8 @@ $(document).ready(function() {
 		var y = Math.round(e.pageY - canvas.offset().top);
 		console.log('x: ' + x + ' y:' + y);
 		
-		var w = vol_info['shape'][horz_ax[k]];
-		var h = vol_info['shape'][vert_ax[k]];
+		var w = vol_info[i]['shape'][horz_ax[k]];
+		var h = vol_info[i]['shape'][vert_ax[k]];
 		if (x < 0) x = 0; else if (x >= w) x = w;
 		if (y < 0) y = 0; else if (y >= h) y = h;
 		if (ax_flip[horz_ax[k]]) x = w - x;
