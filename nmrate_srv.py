@@ -323,6 +323,9 @@ def get_stats(req, config):
 @handle_url("/static")
 def handle_static(req, config):
 	path = urlparse(req.path).path[len("/static")+1:]
+	if path.index('..') != -1:
+		raise ValueError('Path cannot contain double dot traversal.')
+	# print(os.path.abspath(path))# = path.replace('..', '')
 	# print('static_path:', config['static_path'], 'path:', path)
 	full_path = os.path.join(config['static_path'], path)
 	# print('full_path:', full_path)
