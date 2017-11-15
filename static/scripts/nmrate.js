@@ -375,7 +375,13 @@ $(document).ready(function() {
 			}
 		});
 		$('#colormap_dropdown').change(function() {
-			colormap = nmrate.colormap[$('#colormap_dropdown').val()];
+			var colormap_name = $('#colormap_dropdown').val();
+			colormap = nmrate.colormap[colormap_name];
+			if (colormap_name == 'jet') {
+				$('input, button, select, body').addClass('colormap-jet');
+			} else {
+				$('input, button, select, body').removeClass('colormap-jet');
+			}
 			refresh_all();
 		});
 		$('#xhairs_btn').click(function() {

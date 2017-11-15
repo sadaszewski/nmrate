@@ -6,3 +6,5 @@ body { background-color: black; color: #ccc; }
 .nmrate input.imag_wnd { width: 32px; margin-left: 10px; }
 .nmrate canvas { image-rendering: pixelated; }
 .nmrate button.off { color: #555; }
+
+.nmrate .colormap-jet, body.colormap-jet { background: #00008F; }
