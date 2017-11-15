@@ -1,18 +1,20 @@
 {
-	"modalities": ["T1", "T2s", "MT", "PD", "A"],
+	"modalities": ["T1", "T2s", "MT", "PD", "A", "B"],
 	"modality_paths": {
 		"T1": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanT1.nii",
 		"T2s": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanT2s.nii",
 		"MT": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanMT.nii",
 		"PD": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanPD.nii",
-		"A": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanA.nii"
+		"A": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanA.nii",
+		"B": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanA.nii"
 	},
 	"modality_windows": {
-		"T1": [0, 2],
-		"T2s": [0, 2],
-		"MT": [0, 2],
-		"PD": [0, 2],
-		"A": [0, 2]
+		"T1": [0, 0.5],
+		"T2s": [0.5, 1],
+		"MT": [1, 1.5],
+		"PD": [1.5, 2],
+		"A": [0, 2],
+		"B": [1, 2]
 	},
 	"subjects_wildcard": "F:/Users/sadaszew/workspace/nmrate/data/s*",
 	"rating_range": [1, 10],
@@ -28,5 +30,6 @@
 	},
 	"enable_gzip": false,
 	"port": 8080,
-	"address": ""
+	"address": "",
+	"vol_cache": 32
 }

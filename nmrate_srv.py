@@ -57,12 +57,10 @@ def handle_url(url):
 	return inner
 	
 	
-@lru_cache(maxsize=32)
 def load_vol(fname):
 	return nii.load(fname)
 	
 	
-@lru_cache(maxsize=32)
 def reslice_xy(fname):
 	config = MyHandler.config
 	vol = load_vol(fname).dataobj.get_unscaled()
@@ -76,7 +74,6 @@ def reslice_xy(fname):
 	return ret
 	
 
-@lru_cache(maxsize=32)
 def reslice_xz(fname):
 	config = MyHandler.config
 	vol = load_vol(fname).dataobj.get_unscaled()
@@ -90,7 +87,6 @@ def reslice_xz(fname):
 	return ret
 	
 	
-@lru_cache(maxsize=32)
 def reslice_yz(fname):
 	config = MyHandler.config
 	vol = load_vol(fname).dataobj.get_unscaled()
@@ -357,6 +353,19 @@ def verify_password(user_id, passwd, config):
 	correct = gen_passwd(user_id, config);
 	return (passwd == correct)
 	
+	
+def wrap_functions(config):
+	global reslice_xy
+	global reslice_xz
+	global reslice_yz
+	global load_vol
+	vol_cache = int(config['vol_cache'])
+	print('vol_cache:', vol_cache)
+	reslice_xy = lru_cache(vol_cache)(reslice_xy)
+	reslice_xz = lru_cache(vol_cache)(reslice_xz)
+	reslice_yz = lru_cache(vol_cache)(reslice_yz)
+	load_vol = lru_cache(vol_cache)(load_vol)
+	
 
 def main():
 	db = sqlite3.connect('nmrate.db', check_same_thread=False)
@@ -365,6 +374,7 @@ def main():
 	MyHandler.db_lock = RLock()
 	with open('config.json', 'r') as f:
 		config = json.loads(f.read())
+	wrap_functions(config)
 	MyHandler.config = config
 	MyHandler.mime_types.update(MyHandler.config['mime_types'])
 	srv = MyServer((config['address'], config['port']))
