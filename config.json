@@ -30,6 +30,7 @@
 	},
 	"enable_gzip": false,
 	"port": 8080,
-	"address": "",
-	"vol_cache": 32
+	"address": "localhost",
+	"vol_cache": 32,
+	"db_filename": "F:/Users/sadaszew/workspace/nmrate/nmrate.db"
 }

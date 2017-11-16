@@ -370,13 +370,22 @@ def wrap_functions(config):
 	load_vol = lru_cache(vol_cache)(load_vol)
 	
 
+def create_parser():
+	parser = ArgumentParser()
+	parser.add_argument('config', type=str,
+		help='Config filename')
+	return parser
+
+	
 def main():
-	db = sqlite3.connect('nmrate.db', check_same_thread=False)
+	parser = create_parser()
+	args = parser.parse_args()
+	with open(args.config, 'r') as f:
+		config = json.loads(f.read())
+	db = sqlite3.connect(config['db_filename'], check_same_thread=False)
 	bootstrap_db(db)
 	MyHandler.db = db
 	MyHandler.db_lock = RLock()
-	with open('config.json', 'r') as f:
-		config = json.loads(f.read())
 	wrap_functions(config)
 	MyHandler.config = config
 	MyHandler.mime_types.update(MyHandler.config['mime_types'])
