@@ -232,7 +232,7 @@ $(document).ready(function() {
 		var w = vol_info[i]['shape'][horz_ax[k]];
 		var h = vol_info[i]['shape'][vert_ax[k]];
 		ctx.rect(0, 0, w, h);
-		ctx.fillStyle = 'rgba(0,0,0,0.5)';
+		ctx.fillStyle = 'rgba('+colormap[0][0]+','+colormap[0][1]+','+colormap[0][2]+',0.5)';
 		ctx.fill();
 		ctx.font = '30px Arial';
 		ctx.fillStyle = 'white';
