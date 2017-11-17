@@ -319,7 +319,7 @@ def get_stats(req, config):
 			row.append(cnt)
 			sum += cnt * rating
 			sum_cnt += cnt
-		row[1] = sum / sum_cnt
+		row[1] = sum / (sum_cnt if sum_cnt > 0 else 1)
 		table.append(row)
 	req.wfile.write(b'HTTP/1.1 200 OK\n')
 	req.wfile.write(b'Content-Type: text/json\n\n')
