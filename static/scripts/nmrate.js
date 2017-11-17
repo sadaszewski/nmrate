@@ -220,7 +220,8 @@ $(document).ready(function() {
 	function fetch_slice(i, k) {
 		var uri = '/' + ori[k] + '_slice?subject=' + encodeURIComponent(subject) +
 			'&modality=' + encodeURIComponent(modalities[i]) +
-			'&' + ax_name[k] + '=' + encodeURIComponent(Math.round(xyz[ax_idx[k]]+0.5));
+			'&' + ax_name[k] + '=' + encodeURIComponent(Math.round(xyz[ax_idx[k]]+0.5)) +
+			'&user_id=' + encodeURIComponent(user_id) + '&password=' + encodeURIComponent(password);
 			
 		if (slice_cache.has(uri)) {
 			update_canvas(i, k, slice_cache.get(uri));

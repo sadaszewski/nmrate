@@ -138,8 +138,6 @@ def handle_rating_range(req, config):
 	
 @handle_url("/volume_info")
 def volume_info(req, config):
-	req.wfile.write(b'HTTP/1.1 200 OK\n')
-	req.wfile.write(b'Content-Type: text/json\n\n')
 	qs = parse_qs(urlparse(req.path).query)
 	subj = qs['subject'][0]
 	mod = qs['modality'][0]
@@ -154,6 +152,8 @@ def volume_info(req, config):
 		'slope': vol.dataobj.slope,
 		'inter': vol.dataobj.inter
 	})
+	req.wfile.write(b'HTTP/1.1 200 OK\n')
+	req.wfile.write(b'Content-Type: text/json\n\n')
 	req.wfile.write(content.encode('utf-8'))
 	
 	
@@ -162,14 +162,20 @@ def slice_common(sel_fn):
 		qs = parse_qs(urlparse(req.path).query)
 		subj = qs['subject'][0]
 		mod = qs['modality'][0]
+		user_id = int(qs['user_id'][0])
+		passwd = qs['password'][0]
+		if not verify_password(user_id, passwd, config):
+			raise ValueError('Invalid credentials')
 		fname = config['modality_paths'][mod].format(subject=subj, modality=mod)
+		
 		# vol = load_vol(fname)
 		content = sel_fn(qs, fname)
 		# if config['enable_gzip']: content = gzip.compress(content)
 		req.wfile.write(b'HTTP/1.1 200 OK\n')
 		req.wfile.write(b'Content-Type: application/octet-stream\n')
 		if config['enable_gzip']: req.wfile.write(b'Content-Encoding: gzip\n')
-		req.wfile.write(('Content-Length: %d\n\n' % len(content)).encode('utf-8'))
+		req.wfile.write(('Content-Length: %d\n' % len(content)).encode('utf-8'))
+		req.wfile.write(b'Cache-Control: private, max-age=31536000\n\n')
 		req.wfile.write(content)
 	return inner
 	
@@ -339,7 +345,8 @@ def handle_static(req, config):
 	mime_type = MyHandler.mime_types[ext[1:]]
 	req.wfile.write(b'HTTP/1.1 200 OK\n')
 	req.wfile.write(('Content-Type: %s\n' % mime_type).encode('utf-8'))
-	req.wfile.write(('Content-Length: %d\n\n' % len(content)).encode('utf-8'))
+	req.wfile.write(('Content-Length: %d\n' % len(content)).encode('utf-8'))
+	req.wfile.write(b'Cache-Control: public, max-age=86400\n\n')
 	req.wfile.write(content)
 	
 
