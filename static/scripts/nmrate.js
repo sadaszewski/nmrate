@@ -297,10 +297,13 @@ $(document).ready(function() {
 				else if (value < wnd_min) value = wnd_min;
 				value = (value - wnd_min) * (colormap.length - 1) / (wnd_max - wnd_min);
 				var val_0 = Math.floor(value);
-				var val_1 = Math.ceil(value);
+				var val_1 = Math.min(colormap.length - 1, val_0 + 1); // Math.ceil(value);
 				var val_f = value - val_0;
 				val_0 = colormap[val_0];
 				val_1 = colormap[val_1];
+				/* if (val_1 === undefined) {
+					console.log("val_1 undefined!");
+				} */
 				var r = val_0[0] * (1 - val_f) + val_1[0] * val_f;
 				var g = val_0[1] * (1 - val_f) + val_1[1] * val_f;
 				var b = val_0[2] * (1 - val_f) + val_1[2] * val_f;
