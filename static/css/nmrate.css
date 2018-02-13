@@ -1,10 +1,12 @@
-body { background-color: black; color: #ccc; }
-.nmrate button { background-color: black; color: #ccc; border: none; }
+body { background-color: black; color: #ccc; font-size: 14px; font-family: system-ui; }
+.nmrate i.fa { font-size: 18px; }
+.nmrate button { background-color: black; color: #ccc; border: none; font-size: 14px; }
 .nmrate button:active { color: #888; }
-.nmrate select { background-color: black; color: #ccc; border: none; }
-.nmrate input { background-color: black; color: #ccc; border: none; }
+.nmrate select { background-color: black; color: #ccc; border: none; font-size: 14px; }
+.nmrate input { background-color: black; color: #ccc; border: none; font-size: 14px; }
 .nmrate input.imag_wnd { width: 32px; margin-left: 10px; }
 .nmrate canvas { image-rendering: pixelated; }
 .nmrate button.off { color: #555; }
 
 .nmrate .colormap-jet, body.colormap-jet { background: #00008F; }
+.nmrate table { font-size: 14px; }
