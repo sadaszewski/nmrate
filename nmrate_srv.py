@@ -135,13 +135,18 @@ def handle_rating_range(req, config):
 	req.wfile.write(b'Content-Type: text/json\n\n')
 	req.wfile.write(json.dumps(config['rating_range']).encode('utf-8'))
 	
+
+def get_modality_fname(config, subject, modality):
+	pattern = config['modality_paths'][modality].format(subject=subject, modality=modality)
+	return glob.glob(pattern)[0]
+
 	
 @handle_url("/volume_info")
 def volume_info(req, config):
 	qs = parse_qs(urlparse(req.path).query)
 	subj = qs['subject'][0]
 	mod = qs['modality'][0]
-	fname = config['modality_paths'][mod].format(subject=subj, modality=mod)
+	fname = get_modality_fname(config, subject=subj, modality=mod)
 	# print('subj:', subj, 'mod:', mod, 'fname:', fname)
 	vol = load_vol(fname)
 	# print('vol:', vol)
@@ -166,7 +171,7 @@ def slice_common(sel_fn):
 		passwd = qs['password'][0]
 		if not verify_password(user_id, passwd, config):
 			raise ValueError('Invalid credentials')
-		fname = config['modality_paths'][mod].format(subject=subj, modality=mod)
+		fname = get_modality_fname(config, subject=subj, modality=mod)
 		
 		# vol = load_vol(fname)
 		content = sel_fn(qs, fname)
@@ -185,7 +190,7 @@ def slice_common_png(sel_fn):
 		qs = parse_qs(urlparse(req.path).query)
 		subj = qs['subject'][0]
 		mod = qs['modality'][0]
-		fname = config['modality_paths'][mod].format(subject=subj, modality=mod)
+		fname = get_modality_fname(config, subject=subj, modality=mod)
 		vol = load_vol(fname)
 		slice = sel_fn(qs, vol).T
 		# print('slice:', slice)

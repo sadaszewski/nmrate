@@ -1,12 +1,12 @@
 {
 	"modalities": ["T1", "T2s", "MT", "PD", "A", "B"],
 	"modality_paths": {
-		"T1": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanT1.nii",
-		"T2s": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanT2s.nii",
-		"MT": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanMT.nii",
-		"PD": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanPD.nii",
-		"A": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanA.nii",
-		"B": "F:/Users/sadaszew/workspace/nmrate/data/{subject}/r_meanA.nii"
+        "T1": "/Users/sadaszewski/Documents/workspace/nmrate/data/{subject}/*/*mtflash3d*/s*_MT.nii",
+        "T2s": "/Users/sadaszewski/Documents/workspace/nmrate/data/{subject}/*/*mtflash3d*/s*_MT.nii",
+        "MT": "/Users/sadaszewski/Documents/workspace/nmrate/data/{subject}/*/*mtflash3d*/s*_MT.nii",
+        "PD": "/Users/sadaszewski/Documents/workspace/nmrate/data/{subject}/*/*mtflash3d*/s*_MT.nii",
+        "A": "/Users/sadaszewski/Documents/workspace/nmrate/data/{subject}/*/*mtflash3d*/s*_MT.nii",
+        "B": "/Users/sadaszewski/Documents/workspace/nmrate/data/{subject}/*/*mtflash3d*/s*_MT.nii"
 	},
 	"modality_windows": {
 		"T1": [0, 0.5],
@@ -16,10 +16,10 @@
 		"A": [0, 2],
 		"B": [1, 2]
 	},
-	"subjects_wildcard": "F:/Users/sadaszew/workspace/nmrate/data/s*",
+    "subjects_wildcard": "/Users/sadaszewski/Documents/workspace/nmrate/data/*",
 	"rating_range": [1, 10],
 	"secret": "rh130ruy1dm13[rj-tymsntp--2",
-	"static_path": "F:/Users/sadaszew/workspace/nmrate/static",
+    "static_path": "/Users/sadaszewski/Documents/workspace/nmrate/static",
 	"mime_types": {
 		"js": "text/javascript",
 		"png": "image/png",
@@ -32,5 +32,5 @@
 	"port": 8080,
 	"address": "localhost",
 	"vol_cache": 32,
-	"db_filename": "F:/Users/sadaszew/workspace/nmrate/nmrate.db"
+    "db_filename": "/Users/sadaszewski/Documents/workspace/nmrate/nmrate.db"
 }
