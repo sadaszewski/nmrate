@@ -105,6 +105,14 @@ def get_subjects(config):
 	subjs = list(sorted(map(lambda a: os.path.split(a)[-1], subjs)))
 	return subjs
 	
+
+@handle_url("/axes_defs")
+def handle_axes_defs(req, config):
+    req.wfile.write(b'HTTP/1.1 200 OK\n')
+    req.wfile.write(b'Content-Type: text/json\n\n')
+    content = json.dumps(config['axes_defs'])
+    req.wfile.write(content.encode('utf-8'))
+
 		
 @handle_url("/subjects_list")
 def subject_list(req, config):

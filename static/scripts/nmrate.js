@@ -9,13 +9,106 @@ $(document).ready(function() {
 		window.location = '/static/login.html';
 		return;
 	}
+
+    function AxesDef() {
+    }
+
+    AxesDef.create = function(request_prefix,
+        third_axis_param_name,
+        third_axis_index,
+        horz_axis_canvas,
+        vert_axis_canvas,
+        horz_axis_slice,
+        vert_axis_slice,
+        horz_flip,
+        vert_flip) {
+
+        var result = new AxesDef();
+        result.request_prefix = request_prefix;
+        result.third_axis_param_name = third_axis_param_name;
+        result.third_axis_index = third_axis_index;
+        result.horz_axis_canvas = horz_axis_canvas;
+        result.vert_axis_canvas = vert_axis_canvas;
+        result.horz_axis_slice = horz_axis_slice;
+        result.vert_axis_slice = vert_axis_slice;
+        result.horz_flip = horz_flip;
+        result.vert_flip = vert_flip;
+        return result;
+    }
+
+    AxesDef.prototype.canvasWidth = function(shape) {
+        return shape[this.horz_axis_canvas];
+    }
+
+    AxesDef.prototype.canvasHeight = function(shape) {
+        return shape[this.vert_axis_canvas];
+    }
+
+    AxesDef.prototype.sliceWidth = function(shape) {
+        return shape[this.horz_axis_slice];
+    }
+
+    AxesDef.prototype.sliceHeight = function(shape) {
+        return shape[this.vert_axis_slice];
+    }
+
+    AxesDef.prototype.updateVolumeXyzFromCanvasXy = function(shape, x, y, pos_volume) {
+        var canvas_w = this.canvasWidth(shape);
+        var canvas_h = this.canvasHeight(shape);
+
+        if (this.horz_flip)
+            pos_volume[this.horz_axis_canvas] = canvas_w - x - 1;
+        else
+            pos_volume[this.horz_axis_canvas] = x;
+
+        if (this.vert_flip)
+            pos_volume[this.vert_axis_canvas] = canvas_h - y - 1;
+        else
+            pos_volume[this.vert_axis_canvas] = y;
+    }
+
+
+    AxesDef.prototype.canvasXyToSliceXy = function(shape, x, y) {
+        var pos_volume = new Array(3);
+
+        this.updateVolumeXyzFromCanvasXy(shape, x, y, pos_volume);
+
+        var pos_slice = new Array(2);
+        pos_slice[0] = pos_volume[this.horz_axis_slice];
+        pos_slice[1] = pos_volume[this.vert_axis_slice];
+
+        return pos_slice;
+    }
+
+    AxesDef.prototype.canvasXyToSliceIdx = function(shape, x, y) {
+        var pos_slice = this.canvasXyToSliceXy(shape, x, y);
+
+        var slice_w = this.sliceWidth(shape);
+        var slice_h = this.sliceHeight(shape);
+
+        return (pos_slice[0] * slice_h + pos_slice[1]);
+    }
+
+    AxesDef.prototype.volXyzToCanvasX = function(shape, xyz) {
+        var canvas_w = this.canvasWidth(shape);
+        if (this.horz_flip)
+            return canvas_w - xyz[this.horz_axis_canvas] - 1;
+        else
+            return xyz[this.horz_axis_canvas];
+    }
+
+    AxesDef.prototype.volXyzToCanvasY = function(shape, xyz) {
+        var canvas_h = this.canvasHeight(shape);
+        if (this.vert_flip)
+            return canvas_h - xyz[this.vert_axis_canvas] - 1;
+        else
+            return xyz[this.vert_axis_canvas];
+    }
+
+    var axes_defs = []; // [AxesDef.create('xz', 'y', 1, 2, 0, 0, 2, false, false),
+        // AxesDef.create('yz', 'x', 0, 2, 1, 1, 2, false, true),
+        // AxesDef.create('xy', 'z', 2, 0, 1, 0, 1, false, true)];
 	
-	var ori = ['xy', 'xz', 'yz'];
-	var ax_name = ['z', 'y', 'x'];
-	var ax_idx = [2, 1, 0];
-	var horz_ax = [0, 0, 1];
-	var vert_ax = [1, 2, 2];
-	var ax_flip = [false, false, true];
 	var colormap = nmrate.colormap.grayscale;
 	
 	var password = Cookies.get('password');
@@ -30,6 +123,18 @@ $(document).ready(function() {
 	var xhairs = true;
 	
 	$('#user_name').text('User ' + user_id);
+
+    function get_axes_defs() {
+        //get_subjects();
+        $.getJSON('/axes_defs', function(reply) {
+            axes_defs = [];
+            for (var i = 0; i < reply.length; i++) {
+                axes_defs.push(AxesDef.create.apply(null, reply[i]));
+            }
+
+            get_subjects();
+        });
+    }
 	
 	function get_subjects() {
 		$.getJSON('/subjects_list', function(reply) {
@@ -183,13 +288,13 @@ $(document).ready(function() {
 		}
 		table.append(header);
 		
-		for (var k = 0; k < ori.length; k++) {
+        for (var k = 0; k < axes_defs.length; k++) {
 			var row = $('<tr />');
 			for (var i = 0; i < modalities.length; i++) {
 				var cell = $('<td />');
 				
-				var w = shape[horz_ax[k]];
-				var h = shape[vert_ax[k]];
+                var w = axes_defs[k].canvasWidth(shape);
+                var h = axes_defs[k].canvasHeight(shape);
 				
 				var canvas = $('<canvas />')
 					.attr('width', w)
@@ -218,9 +323,9 @@ $(document).ready(function() {
 	}
 	
 	function fetch_slice(i, k) {
-		var uri = '/' + ori[k] + '_slice?subject=' + encodeURIComponent(subject) +
+        var uri = '/' + axes_defs[k].request_prefix + '_slice?subject=' + encodeURIComponent(subject) +
 			'&modality=' + encodeURIComponent(modalities[i]) +
-			'&' + ax_name[k] + '=' + encodeURIComponent(Math.round(xyz[ax_idx[k]]+0.5)) +
+            '&' + axes_defs[k].third_axis_param_name + '=' + encodeURIComponent(Math.round(xyz[axes_defs[k].third_axis_index]+0.5)) +
 			'&user_id=' + encodeURIComponent(user_id) + '&password=' + encodeURIComponent(password);
 			
 		if (slice_cache.has(uri)) {
@@ -230,8 +335,8 @@ $(document).ready(function() {
 		
 		var canvas = $('#cell_' + i + '_' + k).get(0);
 		var ctx = canvas.getContext('2d');
-		var w = vol_info[i]['shape'][horz_ax[k]];
-		var h = vol_info[i]['shape'][vert_ax[k]];
+        var w = axes_defs[k].canvasWidth(vol_info[i]['shape']);
+        var h = axes_defs[k].canvasHeight(vol_info[i]['shape']);
 		ctx.rect(0, 0, w, h);
 		ctx.fillStyle = 'rgba('+colormap[0][0]+','+colormap[0][1]+','+colormap[0][2]+',0.5)';
 		ctx.fill();
@@ -278,21 +383,17 @@ $(document).ready(function() {
 		var wnd_min = Number(val[0]);
 		var wnd_max = Number(val[1]);
 		var shape = vol_info[i]['shape'];
-		var w = shape[horz_ax[k]];
-		var h = shape[vert_ax[k]];
+        var w = axes_defs[k].canvasWidth(shape);
+        var h = axes_defs[k].canvasHeight(shape);
 		var slope = vol_info[i]['slope'];
 		var inter = vol_info[i]['inter'];
 		
 		var imgData = ctx.getImageData(0, 0, w, h);
-		for (var y = 0; y < h; y++) {
-			var y_1 = y;
-			if (ax_flip[vert_ax[k]]) {
-				y_1 = h - y_1 - 1;
-			}
-			
+		for (var y = 0; y < h; y++) {			
 			for (var x = 0; x < w; x++) {
+                var linear_idx = axes_defs[k].canvasXyToSliceIdx(shape, x, y);
 				
-				var value = ary[x * h + y] * slope + inter;
+                var value = ary[linear_idx] * slope + inter;
 				if (value > wnd_max) value = wnd_max;
 				else if (value < wnd_min) value = wnd_min;
 				value = (value - wnd_min) * (colormap.length - 1) / (wnd_max - wnd_min);
@@ -310,12 +411,7 @@ $(document).ready(function() {
 				
 				if (value === undefined) continue; // value = wnd_min;
 				
-				var x_1 = x;
-				if (ax_flip[horz_ax[k]]) {
-					x_1 = w - x_1 - 1;
-				}
-				
-				var ofs = (y_1 * w + x_1) * 4;
+                var ofs = (y * w + x) * 4;
 				imgData.data[ofs + 0] = r;
 				imgData.data[ofs + 1] = g;
 				imgData.data[ofs + 2] = b;
@@ -324,9 +420,7 @@ $(document).ready(function() {
 		}
 		
 		if (xhairs) {
-			var xhair_x = xyz[horz_ax[k]];
-			if (ax_flip[horz_ax[k]]) xhair_x =
-				vol_info[i]['shape'][horz_ax[k]] - xhair_x - 1;
+            var xhair_x = axes_defs[k].volXyzToCanvasX(shape, xyz);
 			
 			for (var y = 0; y < h; y++) {
 				var ofs = (y * w + xhair_x) * 4;
@@ -336,9 +430,7 @@ $(document).ready(function() {
 				imgData.data[ofs + 3] = 255;
 			}
 			
-			var xhair_y = xyz[vert_ax[k]];
-			if (ax_flip[vert_ax[k]]) xhair_y =
-				vol_info[i]['shape'][vert_ax[k]] - xhair_y - 1;
+            var xhair_y = axes_defs[k].volXyzToCanvasY(shape, xyz);
 			
 			for (var x = 0; x < w; x++) {
 				var ofs = (xhair_y * w + x) * 4;
@@ -355,7 +447,7 @@ $(document).ready(function() {
 	
 	function fetch_all_slices() {
 		for (var i = 0; i < modalities.length; i++) {
-			for (var k = 0; k < ori.length; k++) {
+            for (var k = 0; k < axes_defs.length; k++) {
 				fetch_slice(i, k);
 			}
 		}
@@ -429,19 +521,19 @@ $(document).ready(function() {
 	}
 	
 	function on_canvas_click(i, k, e) {
+        var shape = vol_info[i]['shape'];
 		var canvas = $('#cell_' + i + '_' + k);
 		var x = Math.round(e.pageX - canvas.offset().left);
 		var y = Math.round(e.pageY - canvas.offset().top);
 		console.log('x: ' + x + ' y:' + y);
 		
-		var w = vol_info[i]['shape'][horz_ax[k]];
-		var h = vol_info[i]['shape'][vert_ax[k]];
-		if (x < 0) x = 0; else if (x >= w) x = w;
-		if (y < 0) y = 0; else if (y >= h) y = h;
-		if (ax_flip[horz_ax[k]]) x = w - 1 - x;
-		if (ax_flip[vert_ax[k]]) y = h - 1 - y;
-		xyz[horz_ax[k]] = x;
-		xyz[vert_ax[k]] = y;
+        var w = axes_defs[k].canvasWidth(shape);
+        var h = axes_defs[k].canvasHeight(shape);
+        if (x < 0) x = 0; else if (x >= w) x = w;
+        if (y < 0) y = 0; else if (y >= h) y = h;
+
+        axes_defs[k].updateVolumeXyzFromCanvasXy(shape, x, y, xyz);
+
 		fetch_all_slices();
 		
 		e.preventDefault();
@@ -449,6 +541,6 @@ $(document).ready(function() {
 		return false;
 	}
 	
-	get_subjects();
+    get_axes_defs();
 	set_callbacks();
 });

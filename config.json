@@ -9,7 +9,7 @@
         "B": "/Users/sadaszewski/Documents/workspace/nmrate/data/{subject}/*/*mtflash3d*/s*_MT.nii"
 	},
 	"modality_windows": {
-		"T1": [0, 0.5],
+        "T1": [0, 3000],
 		"T2s": [0.5, 1],
 		"MT": [1, 1.5],
 		"PD": [1.5, 2],
@@ -32,5 +32,10 @@
 	"port": 8080,
 	"address": "localhost",
 	"vol_cache": 32,
-    "db_filename": "/Users/sadaszewski/Documents/workspace/nmrate/nmrate.db"
+    "db_filename": "/Users/sadaszewski/Documents/workspace/nmrate/nmrate.db",
+    "axes_defs": [
+        ["xz", "y", 1, 2, 0, 0, 2, false, false],
+        ["yz", "x", 0, 2, 1, 1, 2, false, true],
+        ["xy", "z", 2, 0, 1, 0, 1, false, true]
+    ]
 }
